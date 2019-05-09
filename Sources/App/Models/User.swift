@@ -8,20 +8,16 @@ final class User: SQLiteModel {
     /// Can be `nil` if the user has not been saved yet.
     var id: Int?
     
-    /// User's full name.
-    var name: String
-    
-    /// User's email address.
-    var email: String
+    /// User's username.
+    var username: String
     
     /// BCrypt hash of the user's password.
     var passwordHash: String
     
     /// Creates a new `User`.
-    init(id: Int? = nil, name: String, email: String, passwordHash: String) {
+    init(id: Int? = nil, username: String, passwordHash: String) {
         self.id = id
-        self.name = name
-        self.email = email
+        self.username = username
         self.passwordHash = passwordHash
     }
 }
@@ -30,7 +26,7 @@ final class User: SQLiteModel {
 extension User: PasswordAuthenticatable {
     /// See `PasswordAuthenticatable`.
     static var usernameKey: WritableKeyPath<User, String> {
-        return \.email
+        return \.username
     }
     
     /// See `PasswordAuthenticatable`.
@@ -51,10 +47,8 @@ extension User: Migration {
     static func prepare(on conn: SQLiteConnection) -> Future<Void> {
         return SQLiteDatabase.create(User.self, on: conn) { builder in
             builder.field(for: \.id, isIdentifier: true)
-            builder.field(for: \.name)
-            builder.field(for: \.email)
+            builder.field(for: \.username)
             builder.field(for: \.passwordHash)
-            builder.unique(on: \.email)
         }
     }
 }
