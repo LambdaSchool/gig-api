@@ -2,59 +2,54 @@ import Authentication
 import FluentSQLite
 import Vapor
 
-/// A registered user, capable of owning todo items.
 final class User: SQLiteModel {
-    /// User's unique identifier.
-    /// Can be `nil` if the user has not been saved yet.
     var id: Int?
-    
-    /// User's username.
     var username: String
+    var password: String
     
-    /// BCrypt hash of the user's password.
-    var passwordHash: String
-    
-    /// Creates a new `User`.
-    init(id: Int? = nil, username: String, passwordHash: String) {
+    init(id: Int? = nil, username: String, password: String) {
         self.id = id
         self.username = username
-        self.passwordHash = passwordHash
+        self.password = password
     }
 }
 
-/// Allows users to be verified by basic / password auth middleware.
-extension User: PasswordAuthenticatable {
-    /// See `PasswordAuthenticatable`.
-    static var usernameKey: WritableKeyPath<User, String> {
-        return \.username
-    }
+final class PublicUser: Codable {
+    var id: Int?
+    var username: String
     
-    /// See `PasswordAuthenticatable`.
-    static var passwordKey: WritableKeyPath<User, String> {
-        return \.passwordHash
+    init(id: Int?, username: String) {
+        self.id = id
+        self.username = username
+    }
+}
+extension PublicUser: Content {
+    
+}
+
+extension User: Content {}
+extension User: Migration {}
+extension User: Parameter {}
+
+extension User {
+    func convertToPublic() -> PublicUser {
+        return PublicUser(id: id, username: username)
     }
 }
 
-/// Allows users to be verified by bearer / token auth middleware.
-extension User: TokenAuthenticatable {
-    /// See `TokenAuthenticatable`.
-    typealias TokenType = UserToken
-}
-
-/// Allows `User` to be used as a Fluent migration.
-extension User: Migration {
-    /// See `Migration`.
-    static func prepare(on conn: SQLiteConnection) -> Future<Void> {
-        return SQLiteDatabase.create(User.self, on: conn) { builder in
-            builder.field(for: \.id, isIdentifier: true)
-            builder.field(for: \.username)
-            builder.field(for: \.passwordHash)
+extension Future where T: User {
+    func convertToPublic() -> Future<PublicUser> {
+        return self.map(to: PublicUser.self) { user in
+            return user.convertToPublic()
         }
     }
 }
-
-/// Allows `User` to be encoded to and decoded from HTTP messages.
-extension User: Content { }
-
-/// Allows `User` to be used as a dynamic parameter in route definitions.
-extension User: Parameter { }
+//
+extension User: BasicAuthenticatable {
+    static let usernameKey: UsernameKey = \User.username
+    static let passwordKey: PasswordKey = \User.password
+}
+//
+extension User: TokenAuthenticatable {
+    typealias TokenType = Token
+}

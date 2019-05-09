@@ -5,47 +5,40 @@ import FluentSQLite
 /// Creates new users and logs them in.
 final class UserController {
     /// Logs a user in, returning a token for accessing protected endpoints.
-    func login(_ req: Request) throws -> Future<UserToken> {
-        // get user auth'd by basic auth middleware
-        return try req.content.decode(CreateUserRequest.self).flatMap({ (decodedUser) -> EventLoopFuture<UserToken> in
+    func login(_ req: Request) throws -> Future<Token> {
+        return try req.content.decode(User.self).flatMap { decodedUser -> Future<Token> in
             
             return User.query(on: req)
                 .filter(\.username == decodedUser.username)
-                .first()
-                .flatMap({ (databaseUser) -> EventLoopFuture<UserToken> in
-                    
-                    guard let databaseUser = databaseUser else {
-                        throw Abort(.notFound)
+                .first().flatMap { fetchedUser in
+                    guard let existingUser = fetchedUser else {
+                        throw Abort(HTTPStatus.notFound)
                     }
-                    
                     let hasher = try req.make(BCryptDigest.self)
-                    
-                    if try hasher.verify(decodedUser.password, created: databaseUser.passwordHash) {
+                    if try hasher.verify(decodedUser.password, created: existingUser.password) {
                         let tokenString = try CryptoRandom().generateData(count: 32).base64EncodedString()
-                        
-                        let token = try UserToken(id: nil, string: tokenString, userID: databaseUser.requireID())
+                        let token = try Token(token: tokenString, userId: existingUser.requireID())
                         return token.save(on: req)
                     } else {
                         throw Abort(HTTPStatus.unauthorized)
                     }
-                })
-        })
+            }
+        }
     }
     
     /// Creates a new user.
-    func create(_ req: Request) throws -> Future<UserResponse> {
+    func create(_ req: Request) throws -> Future<PublicUser> {
         // decode request content
-        return try req.content.decode(CreateUserRequest.self).flatMap { user -> Future<User> in
+        return try req.content
+            .decode(User.self)
+            .flatMap { user -> Future<PublicUser> in
             
-            // hash user's password using BCrypt
-            let hash = try BCrypt.hash(user.password)
-            // save new user
-            return User(id: nil, username: user.username, passwordHash: hash)
-                .save(on: req)
-            }.map { user in
-                // map to public user response (omits password hash)
-                return try UserResponse(id: user.requireID(), username: user.username)
-        }
+            user.password = try BCrypt.hash(user.password)
+            
+                let publicUser = user.save(on: req).convertToPublic()
+
+            return publicUser
+            }
     }
 }
 

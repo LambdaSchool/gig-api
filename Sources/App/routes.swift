@@ -12,8 +12,8 @@ public func routes(_ router: Router) throws {
     let bearer = router.grouped(User.tokenAuthMiddleware())
     let gigController = GigController()
     
-    bearer.get("api", "gigs", "my", use: gigController.index)
+//    bearer.get("api", "gigs", "my", use: gigController.index)
     bearer.get("api", "gigs", use: gigController.allGigsHandler)
     bearer.post("api", "gigs", use: gigController.create)
-    bearer.delete("api", "gigs", Gig.parameter, use: gigController.delete)
+//    bearer.delete("api", "gigs", Gig.parameter, use: gigController.delete)
 }
