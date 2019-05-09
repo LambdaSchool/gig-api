@@ -4,7 +4,7 @@ import Vapor
 
 final class Gig: SQLiteModel, Content, Parameter, Migration {
     
-    init(id: Int? = nil, title: String, description: String, dueDate: TimeInterval, userID: User.ID) {
+    init(id: Int? = nil, title: String, description: String, dueDate: Date, userID: User.ID) {
         self.id = id
         self.title = title
         self.description = description
@@ -26,7 +26,7 @@ final class Gig: SQLiteModel, Content, Parameter, Migration {
     var id: Int?
     let title: String
     let description: String
-    let dueDate: TimeInterval
+    let dueDate: Date
     var userID: User.ID
     
     var user: Parent<Gig, User> {

@@ -18,7 +18,8 @@ final class GigController {
         return try Gig.query(on: req)
             .filter(\.userID == user.requireID()).all()
     }
-
+    
+    
     /// Creates a new gig for the auth'd user.
     func create(_ req: Request) throws -> Future<Gig> {
         // fetch auth'd user
@@ -26,10 +27,7 @@ final class GigController {
         
         // decode request content
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .secondsSince1970
-        
-        return try req.content.decode(CreateGigRequest.self, using: decoder).flatMap { gig in
+        return try req.content.decode(CreateGigRequest.self).flatMap { gig in
             // save new todo
             
             return try Gig(title: gig.title, description: gig.description, dueDate: gig.dueDate, userID: user.requireID())
@@ -61,31 +59,31 @@ struct CreateGigRequest: Content {
     
     var title: String
     var description: String
-    var dueDate: TimeInterval
-    
-    enum CodingKeys: String, CodingKey {
-        case title
-        case description
-        case dueDate
-    }
-    
-    init(with decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        let title = try container.decode(String.self, forKey: .title)
-        let description = try container.decode(String.self, forKey: .description)
-        let dueDate = try container.decode(TimeInterval.self, forKey: .dueDate)
-        
-        self.title = title
-        self.description = description
-        self.dueDate = dueDate
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        
-        try container.encode(title, forKey: .title)
-        try container.encode(description, forKey: .description)
-        try container.encode(dueDate, forKey: .dueDate)
-    }
+    var dueDate: Date
+//
+//    enum CodingKeys: String, CodingKey {
+//        case title
+//        case description
+//        case dueDate
+//    }
+//
+//    init(with decoder: Decoder) throws {
+//        let container = try decoder.container(keyedBy: CodingKeys.self)
+//
+//        let title = try container.decode(String.self, forKey: .title)
+//        let description = try container.decode(String.self, forKey: .description)
+//        let dueDate = try container.decode(TimeInterval.self, forKey: .dueDate)
+//
+//        self.title = title
+//        self.description = description
+//        self.dueDate = dueDate
+//    }
+//
+//    func encode(to encoder: Encoder) throws {
+//        var container = encoder.container(keyedBy: CodingKeys.self)
+//
+//        try container.encode(title, forKey: .title)
+//        try container.encode(description, forKey: .description)
+//        try container.encode(dueDate, forKey: .dueDate)
+//    }
 }
