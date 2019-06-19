@@ -40,6 +40,18 @@ final class UserController {
             return publicUser
             }
     }
+    
+    func clearUsers(_ req: Request) throws -> Future<HTTPResponseStatus> {
+        return User.query(on: req)
+            .all().flatMap { (users) -> EventLoopFuture<HTTPResponseStatus> in
+                for user in users {
+                    _ = user.delete(on: req)
+                }
+                let promise = req.eventLoop.newPromise(HTTPResponseStatus.self)
+                promise.succeed(result: .ok)
+                return promise.futureResult
+        }
+    }
 }
 
 // MARK: Content

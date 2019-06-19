@@ -34,6 +34,18 @@ final class GigController {
                 .save(on: req)
         }
     }
+    
+    func clearGigs(_ req: Request) -> Future<HTTPResponseStatus> {
+        return Gig.query(on: req)
+            .all().flatMap { (gigs) -> Future<HTTPResponseStatus> in
+                for gig in gigs {
+                    _ = gig.delete(on: req)
+                }
+                let promise = req.eventLoop.newPromise(HTTPResponseStatus.self)
+                promise.succeed(result: .ok)
+                return promise.futureResult
+        }
+    }
 
     /// Deletes an existing Gig for the auth'd user.
 //    func delete(_ req: Request) throws -> Future<HTTPStatus> {
