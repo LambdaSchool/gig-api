@@ -8,6 +8,8 @@ public func routes(_ router: Router) throws {
     router.post("api", "users", "signup", use: userController.create)
     router.post("api", "users", "login", use: userController.login)
     router.delete("api", "users", "clear", use: userController.clearUsers)
+    router.get("api", "users", "all", use: userController.allUsernames)
+    
     // bearer / token auth protected routes
     let bearer = router.grouped(User.tokenAuthMiddleware())
     let gigController = GigController()

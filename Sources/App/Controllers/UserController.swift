@@ -52,6 +52,18 @@ final class UserController {
                 return promise.futureResult
         }
     }
+    
+    func allUsernames(_ req: Request) throws -> Future<[String]> {
+        return User.query(on: req)
+            .all().flatMap { (users) -> EventLoopFuture<[String]> in
+                
+                let usernames = users.map({ $0.username })
+                
+                let promise = req.eventLoop.newPromise([String].self)
+                promise.succeed(result: usernames)
+                return promise.futureResult
+        }
+    }
 }
 
 // MARK: Content
